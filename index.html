@@ -45,7 +45,7 @@
   .tab[aria-selected="true"] { background: var(--accent); color: #fff; }
 
   /* dense grid: more widgets, tighter spacing */
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 10px; grid-auto-flow: dense; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; grid-auto-flow: dense; }
 
   .widget {
     background: var(--card); border: 1px solid var(--border);
@@ -58,6 +58,7 @@
   .info { width: 14px; height: 14px; color: var(--muted); }
   .w-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
   .metrics { display: flex; margin-top: 10px; }
+  .metrics.m2x2 { display: grid; grid-template-columns: 1fr 1fr; row-gap: 14px; }
   .metric { flex: 1; min-width: 0; padding: 0 6px; text-align: center; }
   .m-label { color: var(--muted); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .m-value { font-size: 26px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.2; margin-top: 2px; }
@@ -160,11 +161,11 @@
 
   // Mixed widget sizes: 4, 2 and 1 metrics; widgets with `fixed` show a value only (no trend)
   var WIDGETS = [
-    { id: "w1", title: "Website performance", metrics: ["visitors", "leads", "pageviews", "forms"] },
+    { id: "w1", title: "Website performance", metrics: ["visitors", "leads", "pageviews", "forms"] } /* 1 column: four metrics wrap 2 x 2 */,
     { id: "w6", title: "Review rating",       fixed: ["rating"] },
     { id: "w2", title: "Email marketing",     metrics: ["subscribers", "sent"] },
     { id: "w3", title: "Social media",        metrics: ["followers"] },
-    { id: "w4", title: "Paid ads",            metrics: ["clicks", "conversions", "impressions", "lpvisits"] },
+    { id: "w4", title: "Paid ads",            metrics: ["clicks", "conversions", "impressions", "lpvisits"], span: 2 },
     { id: "w7", title: "Marketing activity",  fixed: ["campaigns", "scheduled"] },
     { id: "w5", title: "Reviews",             metrics: ["reviews", "requests"] }
   ];
@@ -263,7 +264,7 @@
     var head = '<div class="w-head"><h2 class="w-title">' + w.title + INFO + '</h2>';
     if (variantId === "v2") head += '</div><div class="w-pills">' + rangePill(scope, "grey") + comparePill(scope) + '</div>';
     else head += '</div><div class="w-pills">' + rangePill(scope, "grey") + '</div>';
-    return '<section class="widget' + (w.metrics.length >= 4 ? ' wide' : '') + '">' + head + '<div class="metrics">' +
+    return '<section class="widget' + (w.span === 2 ? ' wide' : '') + '">' + head + '<div class="metrics' + (w.metrics.length >= 4 && w.span !== 2 ? ' m2x2' : '') + '">' +
       w.metrics.map(function (k) { return metricHTML(variantId, k, st); }).join("") + '</div></section>';
   }
 
