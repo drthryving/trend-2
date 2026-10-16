@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Widget Trend Prototype</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f3f5f7;
+    --card: #ffffff;
+    --border: #dfe3e8;
+    --text: #1d2530;
+    --muted: #6a7585;
+    --pill: #eef0f3;
+    --accent: #2d5be3;
+    --up: #17803d;
+    --down: #c62828;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 1320px; margin: 0 auto; padding: 16px 16px 48px; }
+
+  .tabbar {
+    position: sticky; top: 12px; z-index: 40;
+    display: flex; gap: 4px; padding: 4px; width: fit-content; max-width: 100%;
+    margin: 0 auto 12px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 999px;
+    box-shadow: 0 6px 20px rgba(20, 30, 50, .12);
+    overflow-x: auto;
+  }
+  .tab {
+    appearance: none; background: none; border: 0; cursor: pointer;
+    font: inherit; font-weight: 600; color: var(--muted);
+    padding: 8px 16px; border-radius: 999px; white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); }
+  .tab[aria-selected="true"] { background: var(--accent); color: #fff; }
+
+  /* dense grid: more widgets, tighter spacing */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 10px; grid-auto-flow: dense; }
+
+  .widget {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px 14px;
+    min-width: 0;
+  }
+  @media (min-width: 760px) { .widget.wide { grid-column: span 2; } }
+  .w-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .w-title { margin: 0; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+  .info { width: 14px; height: 14px; color: var(--muted); }
+  .w-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .metrics { display: flex; margin-top: 10px; }
+  .metric { flex: 1; min-width: 0; padding: 0 6px; text-align: center; }
+  .m-label { color: var(--muted); font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .m-value { font-size: 26px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.2; margin-top: 2px; }
+  .m-unit { font-size: 14px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+  .m-trend { margin-top: 2px; font-size: 13px; min-height: 19px; }
+
+  .trend-line { display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-weight: 600; flex-wrap: wrap; }
+  .trend-line .t-muted { font-weight: 400; color: var(--muted); }
+  .trend-line > span:first-child { display: inline-flex; align-items: center; gap: 4px; }
+  .arrow { width: 1em; height: 1em; flex: none; }
+  .t-muted { color: var(--muted); }
+  .up { color: var(--up); }
+  .down { color: var(--down); }
+
+  /* dropdowns and pills */
+  .dd { position: relative; display: inline-block; }
+  .pill {
+    appearance: none; font: inherit; font-size: 12px; font-weight: 600; color: var(--text);
+    background: var(--card); border: 1px solid var(--border); border-radius: 999px;
+    padding: 4px 10px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  }
+  .pill:hover { border-color: #b9c1cc; }
+  .pill .val { color: var(--accent); }
+  .pill.grey { background: var(--pill); border-color: transparent; }
+  .pill.grey .val { color: var(--text); }
+  .pill.plain { border-color: transparent; background: none; padding: 2px 0; color: var(--muted); }
+  .chev { width: 11px; height: 11px; color: var(--muted); }
+  .menu {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 50; min-width: 180px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(20, 30, 50, .14); padding: 6px;
+  }
+  .dd.right .menu { left: auto; right: 0; }
+  .opt {
+    appearance: none; display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 10px;
+    background: none; border: 0; font: inherit; font-size: 13px; text-align: left; cursor: pointer;
+    padding: 7px 10px; border-radius: 8px; color: var(--text); white-space: nowrap;
+  }
+  .opt:hover { background: var(--pill); }
+  .opt[aria-checked="true"] { font-weight: 700; }
+  .check { width: 14px; height: 14px; color: var(--accent); }
+  .gate { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+  .gate form { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 340px; }
+  .gate h1 { margin: 0 0 6px; font-size: 18px; }
+  .gate p { margin: 0 0 16px; color: var(--muted); font-size: 14px; }
+  .gate input { width: 100%; font: inherit; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 12px; }
+  .gate button { width: 100%; font: inherit; font-weight: 600; padding: 10px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; cursor: pointer; }
+  .gate .err { color: var(--down); font-size: 13px; margin: -4px 0 12px; min-height: 18px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <nav class="tabbar" role="tablist" id="tabs"></nav>
+  <div id="panel" role="tabpanel"></div>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- Data ---------- */
+  var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var END = new Date(2026, 9, 14); // fixed so every participant sees the same dates
+  var RANGES = [
+    { key: "7",  label: "Last 7 days",  days: 7 },
+    { key: "14", label: "Last 14 days", days: 14 },
+    { key: "30", label: "Last 30 days", days: 30 },
+    { key: "90", label: "Last 90 days", days: 90 }
+  ];
+  var KEYS = ["7", "14", "30", "90"];
+
+  // cur: value per date range; pct: change vs. the equal-length prior period, per date range
+  function m(label, cur, pct) {
+    return { label: label, cur: { "7": cur[0], "14": cur[1], "30": cur[2], "90": cur[3] }, pct: { "7": pct[0], "14": pct[1], "30": pct[2], "90": pct[3] } };
+  }
+  var METRICS = {
+    visitors:    m("Website visitors",       [3120, 6050, 12480, 36210], [0.032, 0.014, 0.052, 0.087]),
+    leads:       m("Leads captured",         [214, 401, 842, 2390],      [-0.058, -0.027, -0.034, 0.012]),
+    subscribers: m("New subscribers",  [410, 802, 1736, 5120],     [0.094, 0.061, 0.118, 0.073]),
+    sent:        m("Emails sent",            [2800, 5400, 11800, 34500], [0.021, 0.015, 0.034, 0.028]),
+    followers:   m("New followers",          [96, 188, 402, 1180],       [0.045, 0.052, 0.067, 0.081]),
+    engagement:  m("Post engagements",       [1450, 2890, 6120, 17900],  [-0.021, -0.012, 0.029, 0.044]),
+    clicks:      m("Ad clicks",              [1980, 3790, 8240, 24300],  [0.073, 0.061, 0.049, 0.038]),
+    conversions: m("Conversions",            [64, 121, 268, 771],        [-0.046, -0.031, -0.018, 0.024]),
+    reviews:     m("New reviews",            [12, 23, 51, 148],          [0.083, 0.047, 0.105, 0.092]),
+    requests:    m("Review requests sent",   [85, 160, 342, 990],        [-0.012, 0.019, 0.026, 0.033]),
+    pageviews:   m("Page views",             [8900, 17100, 36400, 104000], [0.027, 0.018, 0.041, 0.066]),
+    forms:       m("Form submissions",       [58, 112, 241, 702],        [-0.033, 0.021, -0.012, 0.035]),
+    impressions: m("Ad impressions",         [41200, 79800, 171000, 498000], [0.052, 0.044, 0.036, 0.029]),
+    lpvisits:    m("Landing page visits",    [1650, 3180, 6900, 20100],  [-0.017, -0.009, 0.022, 0.031])
+  };
+
+  // Metrics without a trend: a current value only, with a short caption
+  var STATIC = {
+    rating:    { label: "Average rating",     value: "4.7", unit: "/ 5", caption: "\u2605\u2605\u2605\u2605\u2605 from 128 reviews" },
+    campaigns: { label: "Campaigns running",  value: "6",   unit: "",    caption: "3 email, 2 ads, 1 social" },
+    scheduled: { label: "Posts scheduled",    value: "14",  unit: "",    caption: "Next one goes out tomorrow" }
+  };
+
+  // Mixed widget sizes: 4, 2 and 1 metrics; widgets with `fixed` show a value only (no trend)
+  var WIDGETS = [
+    { id: "w1", title: "Website performance", metrics: ["visitors", "leads", "pageviews", "forms"] },
+    { id: "w6", title: "Review rating",       fixed: ["rating"] },
+    { id: "w2", title: "Email marketing",     metrics: ["subscribers", "sent"] },
+    { id: "w3", title: "Social media",        metrics: ["followers"] },
+    { id: "w4", title: "Paid ads",            metrics: ["clicks", "conversions", "impressions", "lpvisits"] },
+    { id: "w7", title: "Marketing activity",  fixed: ["campaigns", "scheduled"] },
+    { id: "w5", title: "Reviews",             metrics: ["reviews", "requests"] }
+  ];
+
+  // Order here is the tab order; ids are internal, labels and #hash links follow position.
+  var VARIANTS = [{ id: "v2" }, { id: "v1" }];
+  VARIANTS.forEach(function (v, i) { v.name = "Variant " + (i + 1); v.slug = "v" + (i + 1); });
+
+  /* ---------- Helpers ---------- */
+  function fmtDate(d) { return MON[d.getMonth()] + " " + d.getDate(); }
+  function rangeDays(key) { return parseInt(key, 10); }
+  function rangeText(key) {
+    var start = new Date(END); start.setDate(END.getDate() - (rangeDays(key) - 1));
+    return fmtDate(start) + "–" + fmtDate(END);
+  }
+  function num(n) { return Math.round(n).toLocaleString("en-US"); }
+  function pctText(p) { return (p >= 0 ? "+" : "−") + (Math.abs(p) * 100).toFixed(1) + "%"; }
+
+  // The comparison length mirrors the date range options ("vs. prior 14 days"); it defaults to the selected range.
+  function change(metricKey, rangeKey, cmpKey) {
+    var base = METRICS[metricKey].pct[rangeKey];
+    if (cmpKey === rangeKey) return base;
+    return base + 0.012 * (KEYS.indexOf(cmpKey) - KEYS.indexOf(rangeKey));
+  }
+  function cmpLabel(key) { return "vs. prior " + key + " days"; }
+
+  var ARROW_UP = '<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+  var ARROW_DOWN = '<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>';
+  var CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  var CHECK = '<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>';
+  var INFO = '<svg class="info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01" stroke-linecap="round"/></svg>';
+
+  /* ---------- State ---------- */
+  var state = {};          // one entry per variant + widget
+  var openMenu = null;
+  var activeVariant = VARIANTS[0].id;
+
+  function scopeKey(variantId, widgetId) { return variantId + ":" + widgetId; }
+  function getState(scope) {
+    if (!state[scope]) state[scope] = { range: "30", compare: null }; // compare: null = match the date range
+    return state[scope];
+  }
+  function cmpKeyOf(st) { return st.compare || st.range; }
+
+  /* ---------- Dropdowns ---------- */
+  function menuHTML(kind, scope, options, selected) {
+    return '<div class="menu" role="menu">' + options.map(function (o) {
+      var on = o.key === selected;
+      return '<button class="opt" role="menuitemradio" aria-checked="' + on + '" data-action="pick" data-kind="' + kind +
+        '" data-scope="' + scope + '" data-value="' + o.key + '">' + o.label + (on ? CHECK : "") + '</button>';
+    }).join("") + '</div>';
+  }
+
+  function rangePill(scope, style) {
+    var st = getState(scope), id = "range:" + scope, open = openMenu === id;
+    var cls = style === "plain" ? "pill plain" : "pill grey";
+    return '<div class="dd' + (style === "plain" ? " right" : "") + '"><button class="' + cls + '" data-action="toggle" data-menu="' + id +
+      '" aria-haspopup="menu" aria-expanded="' + open + '"><span class="val">' + rangeText(st.range) + '</span>' + CHEV + '</button>' +
+      (open ? menuHTML("range", scope, RANGES, st.range) : "") + '</div>';
+  }
+
+  // Variant 2: a single dropdown whose labels follow the date range wording ("vs. prior 14 days")
+  function comparePill(scope) {
+    var st = getState(scope), id = "compare:" + scope, open = openMenu === id, cur = cmpKeyOf(st);
+    var opts = KEYS.map(function (k) { return { key: k, label: cmpLabel(k) }; });
+    return '<div class="dd right"><button class="pill grey" data-action="toggle" data-menu="' + id +
+      '" aria-haspopup="menu" aria-expanded="' + open + '"><span class="val">' + cmpLabel(cur) + '</span>' + CHEV + '</button>' +
+      (open ? menuHTML("compare", scope, opts, cur) : "") + '</div>';
+  }
+
+  /* ---------- Rendering ---------- */
+  function trendHTML(variantId, metricKey, st) {
+    var p = change(metricKey, st.range, cmpKeyOf(st)), d = p >= 0 ? "up" : "down";
+    var text = variantId === "v1" ? '<span class="t-muted">' + cmpLabel(st.range) + '</span>' : "";
+    return '<span class="trend-line"><span class="' + d + '">' + (p >= 0 ? ARROW_UP : ARROW_DOWN) + '<span>' + pctText(p) + '</span></span>' + text + '</span>';
+  }
+
+  function metricHTML(variantId, metricKey, st) {
+    var mt = METRICS[metricKey];
+    return '<div class="metric"><div class="m-label">' + mt.label + '</div><div class="m-value">' + num(mt.cur[st.range]) +
+      '</div><div class="m-trend">' + trendHTML(variantId, metricKey, st) + '</div></div>';
+  }
+
+  function fixedMetricHTML(key) {
+    var f = STATIC[key];
+    return '<div class="metric"><div class="m-label">' + f.label + '</div><div class="m-value">' + f.value +
+      (f.unit ? '<span class="m-unit"> ' + f.unit + '</span>' : '') + '</div><div class="m-trend"><span class="t-muted">' + f.caption + '</span></div></div>';
+  }
+
+  function widgetHTML(variantId, w) {
+    if (w.fixed) {
+      return '<section class="widget"><div class="w-head"><h2 class="w-title">' + w.title + INFO + '</h2></div><div class="metrics">' +
+        w.fixed.map(fixedMetricHTML).join("") + '</div></section>';
+    }
+    var scope = scopeKey(variantId, w.id), st = getState(scope);
+    var head = '<div class="w-head"><h2 class="w-title">' + w.title + INFO + '</h2>';
+    if (variantId === "v2") head += '</div><div class="w-pills">' + rangePill(scope, "grey") + comparePill(scope) + '</div>';
+    else head += '</div><div class="w-pills">' + rangePill(scope, "grey") + '</div>';
+    return '<section class="widget' + (w.metrics.length >= 4 ? ' wide' : '') + '">' + head + '<div class="metrics">' +
+      w.metrics.map(function (k) { return metricHTML(variantId, k, st); }).join("") + '</div></section>';
+  }
+
+  function render() {
+    document.getElementById("tabs").innerHTML = VARIANTS.map(function (v) {
+      return '<button class="tab" role="tab" data-action="tab" data-variant="' + v.id + '" aria-selected="' + (v.id === activeVariant) + '">' + v.name + '</button>';
+    }).join("");
+    document.getElementById("panel").innerHTML = '<div class="grid">' +
+      WIDGETS.map(function (w) { return widgetHTML(activeVariant, w); }).join("") + '</div>';
+  }
+
+  /* ---------- Events ---------- */
+  document.addEventListener("click", function (e) {
+    var el = e.target.closest("[data-action]");
+    if (!el) { if (openMenu) { openMenu = null; render(); } return; }
+    var a = el.getAttribute("data-action");
+    if (a === "tab") {
+      activeVariant = el.getAttribute("data-variant"); openMenu = null;
+      try { history.replaceState(null, "", "#" + VARIANTS.filter(function (v) { return v.id === activeVariant; })[0].slug); } catch (_) {}
+      render();
+    } else if (a === "toggle") {
+      var id = el.getAttribute("data-menu");
+      openMenu = openMenu === id ? null : id; render();
+    } else if (a === "pick") {
+      var st = getState(el.getAttribute("data-scope")), v = el.getAttribute("data-value");
+      if (el.getAttribute("data-kind") === "range") { st.range = v; st.compare = null; } else { st.compare = v; }
+      openMenu = null; render();
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && openMenu) { openMenu = null; render(); }
+  });
+
+  function start() {
+    var hash = (location.hash || "").replace("#", "");
+    var hit = VARIANTS.filter(function (v) { return v.slug === hash; })[0];
+    if (hit) activeVariant = hit.id;
+    render();
+  }
+
+  /* ---------- Password gate (client-side; keeps casual visitors out, not real security) ---------- */
+  var PASS_HASH = "60ff26dcd8c2e3cae02c352236b94f3dfad202b0a99f4dcd539c6eff7ea6b34a";
+  function sha256(text) {
+    return crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)).then(function (buf) {
+      return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+    });
+  }
+  function unlocked() { try { return sessionStorage.getItem("trend2-ok") === PASS_HASH; } catch (_) { return false; } }
+  function showGate() {
+    document.getElementById("tabs").hidden = true;
+    var panel = document.getElementById("panel");
+    panel.removeAttribute("role");
+    panel.innerHTML = '<div class="gate"><form id="gateForm"><h1>Enter password</h1><p>Enter the password you were given to continue.</p>' +
+      '<input id="gatePw" type="password" autocomplete="off" aria-label="Password" autofocus>' +
+      '<div class="err" id="gateErr" role="alert"></div><button type="submit">Continue</button></form></div>';
+    document.getElementById("gateForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      sha256("trend-study:" + document.getElementById("gatePw").value.trim()).then(function (h) {
+        if (h === PASS_HASH) {
+          try { sessionStorage.setItem("trend2-ok", PASS_HASH); } catch (_) {}
+          document.getElementById("tabs").hidden = false;
+          panel.setAttribute("role", "tabpanel");
+          start();
+        } else {
+          document.getElementById("gateErr").textContent = "Incorrect password. Try again.";
+        }
+      });
+    });
+  }
+  if (unlocked()) start(); else showGate();
+})();
+</script>
+</body>
+</html>
